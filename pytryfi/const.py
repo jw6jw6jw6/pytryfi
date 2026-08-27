@@ -1,4 +1,4 @@
-PYTRYFI_VERSION = "0.0.21"
+PYTRYFI_VERSION = "0.0.21.post1"
 
 API_HOST_URL_BASE   = "https://api.tryfi.com"
 API_GRAPHQL         = "/graphql"
