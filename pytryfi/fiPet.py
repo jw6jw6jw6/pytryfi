@@ -4,7 +4,7 @@ from pytryfi.common import query
 from pytryfi.exceptions import *
 from pytryfi.const import PET_ACTIVITY_ONGOINGWALK
 import datetime
-from sentry_sdk import capture_exception
+from pytryfi._nosentry import capture_exception
 
 LOGGER = logging.getLogger(__name__)
 

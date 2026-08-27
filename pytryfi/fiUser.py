@@ -1,6 +1,6 @@
 from pytryfi.common import query
 import datetime
-from sentry_sdk import capture_exception
+from pytryfi._nosentry import capture_exception
 
 class FiUser(object):
     def __init__(self, userId):

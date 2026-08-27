@@ -3,7 +3,7 @@ from pytryfi.exceptions import *
 import json
 import requests
 import logging
-from sentry_sdk import capture_exception
+from pytryfi._nosentry import capture_exception
 
 LOGGER = logging.getLogger(__name__)
 

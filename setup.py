@@ -35,7 +35,6 @@ setup(
     ],
     install_requires=[
         'requests',
-        'sentry-sdk',
     ],
     python_requires='>=3.6',
 )

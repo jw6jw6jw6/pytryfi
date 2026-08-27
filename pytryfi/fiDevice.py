@@ -2,6 +2,7 @@ import logging
 import datetime
 from pytryfi.ledColors import ledColors
 from pytryfi.const import PET_MODE_NORMAL, PET_MODE_LOST
+from pytryfi._nosentry import capture_exception
 
 LOGGER = logging.getLogger(__name__)
 
