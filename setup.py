@@ -3,7 +3,16 @@
 import os
 import sys
 from setuptools import setup, find_packages
-from pytryfi.const import PYTRYFI_VERSION
+import re
+from pathlib import Path
+
+# Read the version without importing pytryfi: pip builds in an isolated env
+# where this package's own runtime deps are not yet installed.
+PYTRYFI_VERSION = re.search(
+    r'^PYTRYFI_VERSION\s*=\s*"([^"]+)"',
+    (Path(__file__).parent / "pytryfi" / "const.py").read_text(encoding="utf-8"),
+    re.M,
+).group(1)
 
 if sys.argv[-1] == 'compile':
     os.system('python setup.py bdist_wheel')
@@ -35,7 +44,6 @@ setup(
     ],
     install_requires=[
         'requests',
-        'sentry-sdk',
     ],
     python_requires='>=3.6',
 )

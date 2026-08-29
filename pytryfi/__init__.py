@@ -6,9 +6,7 @@ from pytryfi.fiUser import FiUser
 from pytryfi.fiPet import FiPet
 from pytryfi.fiBase import FiBase
 from pytryfi.common import query
-from pytryfi.const import SENTRY_URL
-import sentry_sdk
-from sentry_sdk import capture_message, capture_exception
+from pytryfi._nosentry import capture_message, capture_exception
 
 
 
@@ -19,10 +17,6 @@ class PyTryFi(object):
 
     def __init__(self, username=None, password=None):
         try:
-            sentry = sentry_sdk.init(
-                    SENTRY_URL,
-                    release=PYTRYFI_VERSION,
-                )
             self._api_host = API_HOST_URL_BASE
             self._session = requests.Session()
             self._user_agent = "pyTryFi"
