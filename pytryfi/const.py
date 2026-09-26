@@ -15,17 +15,29 @@ PET_ACTIVITY_WALK = "Walk"
 PET_ACTIVITY_REST = "Rest"
 
 VAR_PET_ID = "__PET_ID__"
+VAR_PERIOD = "__PERIOD__"
+
+# Behavior trend periods and the id prefixes returned by getPetHealthTrendsForPet
+BEHAVIOR_PERIODS = {"DAY": "daily", "WEEK": "weekly", "MONTH": "monthly"}
+BEHAVIOR_TYPES = {
+    "barking": "Barking",
+    "cleaning_self": "Licking",
+    "scratching": "Scratching",
+    "eating": "Eating",
+    "drinking": "Drinking",
+}
 
 QUERY_CURRENT_USER  = "query {  currentUser {    ...UserDetails  }}"
 QUERY_CURRENT_USER_FULL_DETAIL  = "query {  currentUser {    ...UserFullDetails  }}"
 
 QUERY_GET_BASES = "query { currentUser { userHouseholds { household { bases { __typename ...BaseDetails }}}}}"
 
-QUERY_PET_ACTIVE_DETAILS = "query {  pet (id: \"" + VAR_PET_ID + "\") { ongoingActivity { __typename ...OngoingActivityDetails } dailyStepStat: currentActivitySummary (period: DAILY) { ...ActivitySummaryDetails } weeklyStepStat: currentActivitySummary (period: WEEKLY) { ...ActivitySummaryDetails } monthlyStepStat: currentActivitySummary (period: MONTHLY) { ...ActivitySummaryDetails } device { __typename moduleId info operationParams {    __typename    ...OperationParamsDetails  }  nextLocationUpdateExpectedBy  lastConnectionState {    __typename    ...ConnectionStateDetails  }  ledColor {    __typename    ...LedColorDetails }} dailySleepStat: restSummaryFeed(cursor: null, period: DAILY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails }} monthlySleepStat: restSummaryFeed(cursor: null, period: MONTHLY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails }} }}"
+QUERY_PET_ACTIVE_DETAILS = "query {  pet (id: \"" + VAR_PET_ID + "\") { ongoingActivity { __typename ...OngoingActivityDetails } dailyStepStat: currentActivitySummary (period: DAILY) { ...ActivitySummaryDetails } weeklyStepStat: currentActivitySummary (period: WEEKLY) { ...ActivitySummaryDetails } monthlyStepStat: currentActivitySummary (period: MONTHLY) { ...ActivitySummaryDetails } device { __typename moduleId info operationParams {    __typename    ...OperationParamsDetails  }  nextLocationUpdateExpectedBy  lastConnectionState {    __typename    ...ConnectionStateDetails  }  ledColor {    __typename    ...LedColorDetails }} dailySleepStat: restSummaryFeed(cursor: null, period: DAILY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails }} weeklySleepStat: restSummaryFeed(cursor: null, period: WEEKLY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails }} monthlySleepStat: restSummaryFeed(cursor: null, period: MONTHLY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails }} }}"
 
 QUERY_PET_CURRENT_LOCATION = "query {  pet (id: \""+VAR_PET_ID+"\") {    ongoingActivity {      __typename      ...OngoingActivityDetails    }  }}"
 QUERY_PET_ACTIVITY = "query {  pet (id: \""+VAR_PET_ID+"\") {       dailyStat: currentActivitySummary (period: DAILY) {      ...ActivitySummaryDetails    }    weeklyStat: currentActivitySummary (period: WEEKLY) {      ...ActivitySummaryDetails    }    monthlyStat: currentActivitySummary (period: MONTHLY) {      ...ActivitySummaryDetails    }  }}"
 QUERY_PET_REST = "query {  pet (id: \""+VAR_PET_ID+"\") {	dailyStat: restSummaryFeed(cursor: null, period: DAILY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails      }    }	weeklyStat: restSummaryFeed(cursor: null, period: WEEKLY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails      }    }	monthlyStat: restSummaryFeed(cursor: null, period: MONTHLY, limit: 1) {      __typename      restSummaries {        __typename        ...RestSummaryDetails      }    }  }}"
+QUERY_PET_HEALTH_TRENDS = "query {  getPetHealthTrendsForPet(petId: \""+VAR_PET_ID+"\", period: "+VAR_PERIOD+") {    behaviorTrends {      __typename      ...BehaviorTrendDetails    }  }}"
 QUERY_PET_DEVICE_DETAILS = "query {  pet (id: \""+VAR_PET_ID+"\") {    __typename    ...PetProfile  }}"
 
 FRAGMENT_USER_DETAILS = "fragment UserDetails on User {  __typename   id  email  firstName  lastName  phoneNumber }"
@@ -45,5 +57,6 @@ FRAGMENT_LOCATION_POINT = "fragment LocationPoint on Location {  __typename  dat
 FRAGMENT_PLACE_DETAILS = "fragment PlaceDetails on Place {  __typename  id  name  address  position {    __typename    ...PositionCoordinates  }  radius}"
 FRAGMENT_ACTIVITY_SUMMARY_DETAILS = "fragment ActivitySummaryDetails on ActivitySummary {  __typename  totalSteps  stepGoal  totalDistance}"
 FRAGMENT_REST_SUMMARY_DETAILS = "fragment RestSummaryDetails on RestSummary {  __typename  start  end  data {    __typename    ... on ConcreteRestSummaryData {      sleepAmounts {        __typename        type        duration      }    }  }}"
+FRAGMENT_BEHAVIOR_TREND_DETAILS = "fragment BehaviorTrendDetails on PetHealthTrend {  __typename  id  title  summaryComponents {    __typename    eventsSummary    durationSummary  }}"
 MUTATION_DEVICE_OPS = "mutation UpdateDeviceOperationParams($input: UpdateDeviceOperationParamsInput!) {  updateDeviceOperationParams(input: $input) {    __typename    ...DeviceDetails  }}"
 MUTATION_SET_LED_COLOR = "mutation SetDeviceLed($moduleId: String!, $ledColorCode: Int!) {  setDeviceLed(moduleId: $moduleId, ledColorCode: $ledColorCode) {    __typename    ...DeviceDetails  }}"

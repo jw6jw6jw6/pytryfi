@@ -2,7 +2,7 @@ import datetime
 import logging
 import requests
 from pytryfi.common import query
-from pytryfi.const import PET_ACTIVITY_ONGOINGWALK
+from pytryfi.const import PET_ACTIVITY_ONGOINGWALK, BEHAVIOR_PERIODS, BEHAVIOR_TYPES
 from pytryfi.exceptions import *
 from pytryfi.fiDevice import FiDevice
 from sentry_sdk import capture_exception
@@ -24,6 +24,11 @@ class FiPet(object):
         self._weight = None
         self._lastUpdated = None
         self._locationLastUpdate = None
+        # behavior stats (Series 3+ collars only), e.g. _dailyBarkingCount / _dailyBarkingDuration (minutes)
+        for prefix in BEHAVIOR_PERIODS.values():
+            for behavior in BEHAVIOR_TYPES.values():
+                setattr(self, f"_{prefix}{behavior}Count", None)
+                setattr(self, f"_{prefix}{behavior}Duration", None)
 
     def setPetDetailsJSON(self, petJSON: dict):
         self._name = petJSON.get('name')
@@ -141,6 +146,70 @@ class FiPet(object):
             capture_exception(e)
             return False
 
+    # Update behavior stats (barking, licking, scratching, eating, drinking) for Series 3+ collars
+    def updateBehaviorStats(self, sessionId: requests.Session):
+        if not self.device.supportsBehaviorStats():
+            return False
+        success = True
+        for period in BEHAVIOR_PERIODS:
+            try:
+                trendsJSON = query.getPetHealthTrends(sessionId, self.petId, period)
+                self.setBehaviorStats(trendsJSON.get('behaviorTrends') or [], period)
+            except Exception as e:
+                LOGGER.warning(f"Could not update {period} behavior stats for Pet {self.name}.\n{e}")
+                success = False
+        return success
+
+    # set the Pet's behavior counts and durations (minutes) for the given period (DAY, WEEK or MONTH)
+    def setBehaviorStats(self, behaviorTrends: list, period: str = "DAY"):
+        prefix = BEHAVIOR_PERIODS[period]
+        for behavior in BEHAVIOR_TYPES.values():
+            setattr(self, f"_{prefix}{behavior}Count", 0)
+            setattr(self, f"_{prefix}{behavior}Duration", 0)
+
+        for trend in behaviorTrends:
+            if not isinstance(trend, dict):
+                continue
+            # ids look like "barking:DAY"
+            behavior = BEHAVIOR_TYPES.get(trend.get('id', '').split(':')[0])
+            summary = trend.get('summaryComponents') or {}
+            eventsSummary = summary.get('eventsSummary')
+            # eventsSummary is None when the collar doesn't support this behavior
+            if behavior is None or eventsSummary is None:
+                continue
+            count = self._parseBehaviorCount(eventsSummary)
+            duration = self._parseBehaviorDuration(summary.get('durationSummary'))
+            setattr(self, f"_{prefix}{behavior}Count", count)
+            setattr(self, f"_{prefix}{behavior}Duration", duration)
+        self._lastUpdated = datetime.datetime.now()
+
+    # e.g. '24 events', '1 event'
+    @staticmethod
+    def _parseBehaviorCount(summary: str) -> int:
+        try:
+            return round(float(summary.split()[0]))
+        except (ValueError, IndexError):
+            return 0
+
+    # e.g. '46min', '1hr 5min', '1.5hr', '<1min', '10.1' -> minutes
+    @staticmethod
+    def _parseBehaviorDuration(summary: str) -> int:
+        if not summary or summary.startswith('<'):
+            return 0
+        minutes = 0.0
+        try:
+            for part in summary.split():
+                if part.endswith('hr'):
+                    minutes += float(part[:-2]) * 60
+                elif part.endswith('min'):
+                    minutes += float(part[:-3])
+                else:
+                    minutes += float(part)
+        except ValueError:
+            LOGGER.warning(f"Unable to parse behavior duration: {summary}")
+            return 0
+        return round(minutes)
+
     # Update the Pet's GPS location
     def updatePetLocation(self, sessionId: requests.Session):
         try:
@@ -169,9 +238,10 @@ class FiPet(object):
         self.device.setDeviceDetailsJSON(petJson['device'])
         self.setCurrentLocation(petJson['ongoingActivity'])
         self.setStats(petJson['dailyStepStat'], petJson['weeklyStepStat'], petJson['monthlyStepStat'])
-        # TODO: Support weekly
         self._dailySleep, self._dailyNap = self._extractSleep(petJson['dailySleepStat'])
+        self._weeklySleep, self._weeklyNap = self._extractSleep(petJson['weeklySleepStat'])
         self._monthlySleep, self._monthlyNap = self._extractSleep(petJson['monthlySleepStat'])
+        self.updateBehaviorStats(sessionId)
 
     # set the color code of the led light on the pet collar
     def setLedColorCode(self, sessionId: requests.Session, colorCode):
@@ -317,6 +387,15 @@ class FiPet(object):
     def monthlyNap(self):
         return self._monthlyNap
     
+    # returns {'count': int, 'duration': int (minutes)} for a behavior ('Barking', 'Licking', 'Scratching',
+    # 'Eating', 'Drinking') and period ('DAY', 'WEEK', 'MONTH'). Values are None if not supported/fetched.
+    def getBehavior(self, behavior: str, period: str = "DAY") -> dict:
+        prefix = BEHAVIOR_PERIODS[period]
+        return {
+            'count': getattr(self, f"_{prefix}{behavior}Count"),
+            'duration': getattr(self, f"_{prefix}{behavior}Duration"),
+        }
+
     @property
     def locationLastUpdate(self):
         return self._locationLastUpdate
@@ -379,4 +458,13 @@ class FiPet(object):
 
     def getMonthlyDistance(self):
         return self.monthlyTotalDistance
-        
+
+# Behavior properties (Series 3+ only), e.g. dailyBarkingCount, weeklyLickingDuration (minutes)
+def _behaviorProperty(attr):
+    return property(lambda self: getattr(self, attr))
+
+for _prefix in BEHAVIOR_PERIODS.values():
+    for _behavior in BEHAVIOR_TYPES.values():
+        for _metric in ("Count", "Duration"):
+            _name = f"{_prefix}{_behavior}{_metric}"
+            setattr(FiPet, _name, _behaviorProperty(f"_{_name}"))

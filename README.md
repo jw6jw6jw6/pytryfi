@@ -1,5 +1,8 @@
 # pytryfi - Python Interface for TryFi
 
+## Fork
+This fork adds additional health metrics.
+
 This python interface enables you to gather information about your dogs whereabouts, your user details and any bases you may have.
 
 NOTE: Since this interacts with undocumented APIs, this may change without notice.
@@ -124,6 +127,22 @@ tryfi.pets[0].weeklyTotalDistance
 tryfi.pets[0].monthlyGoal
 tryfi.pets[0].monthlySteps
 tryfi.pets[0].monthlyTotalDistance
+
+#this will update behavior stats (Series 3+ collars only; Series 1/2 and Mini are skipped)
+tryfi.pets[0].updateBehaviorStats(tryfi.session)
+
+#get behavior stats - event counts and durations (minutes) for daily/weekly/monthly
+#available behaviors: Barking, Licking, Scratching, Eating, Drinking
+#values are None if the collar doesn't support them
+tryfi.pets[0].dailyBarkingCount
+tryfi.pets[0].dailyBarkingDuration
+tryfi.pets[0].weeklyLickingCount
+tryfi.pets[0].weeklyLickingDuration
+tryfi.pets[0].monthlyScratchingCount
+tryfi.pets[0].dailyEatingCount
+tryfi.pets[0].dailyDrinkingDuration
+#or look one up by name and period (DAY, WEEK, MONTH)
+tryfi.pets[0].getBehavior("Barking", "WEEK")   # {'count': 24, 'duration': 46}
 
 #get status info
 tryfi.pets[0].lastUpdated

@@ -57,6 +57,12 @@ def getCurrentPetRestStats(session: requests.Session, petId: str):
     LOGGER.debug(f"getCurrentPetStats: {response}")
     return response['data']['pet']
 
+def getPetHealthTrends(session: requests.Session, petId: str, period: str = "DAY"):
+    qString = QUERY_PET_HEALTH_TRENDS.replace(VAR_PET_ID, petId).replace(VAR_PERIOD, period) + FRAGMENT_BEHAVIOR_TREND_DETAILS
+    response = query(session, qString)
+    LOGGER.debug(f"getPetHealthTrends: {response}")
+    return response['data']['getPetHealthTrendsForPet']
+
 def getDevicedetails(session: requests.Session, petId: str):
     qString = QUERY_PET_DEVICE_DETAILS.replace(VAR_PET_ID, petId) + FRAGMENT_PET_PROFILE + FRAGEMENT_BASE_PET_PROFILE + \
         FRAGMENT_DEVICE_DETAILS + FRAGMENT_LED_DETAILS + FRAGMENT_OPERATIONAL_DETAILS + FRAGMENT_CONNECTION_STATE_DETAILS + \

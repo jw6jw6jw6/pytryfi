@@ -66,6 +66,15 @@ class FiDevice(object):
             connectedToString = None
         return connectedToString
 
+    # Returns True if the collar is new enough to report behavior stats
+    # (barking, licking, scratching, eating, drinking) via getPetHealthTrendsForPet
+    def supportsBehaviorStats(self) -> bool:
+        mid = self._moduleId
+        if mid is None:
+            return False
+        # Series 1, Series 2 and Mini Fi do not support behavior stats
+        return not (mid.startswith("FC1") or mid.startswith("FC2") or mid.startswith("M1"))
+
     @property
     def deviceId(self) -> str:
         return self._deviceId
